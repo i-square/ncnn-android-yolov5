@@ -16,6 +16,7 @@ package com.tencent.yolov5ncnn;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -25,11 +26,13 @@ import android.media.ExifInterface;
 import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.IOException;
@@ -63,9 +66,18 @@ public class MainActivity extends Activity
         buttonImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
-                Intent i = new Intent(Intent.ACTION_PICK);
-                i.setType("image/*");
-                startActivityForResult(i, SELECT_IMAGE);
+//                Intent i = new Intent(Intent.ACTION_PICK);
+//                i.setType("image/*");
+//                startActivityForResult(i, SELECT_IMAGE);
+
+                bitmap = loadImg("basketball.jpg");
+                yourSelectedImage = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+                imageView.setImageBitmap(bitmap);
+
+                Intent intent = new Intent();
+                intent.setType("image/*");
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                startActivityForResult(Intent.createChooser(intent, "Select Picture"), SELECT_IMAGE);
             }
         });
 
@@ -73,8 +85,12 @@ public class MainActivity extends Activity
         buttonDetect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
-                if (yourSelectedImage == null)
-                    return;
+                if (yourSelectedImage == null || bitmap == null)
+                {
+                    bitmap = loadImg("basketball.jpg");
+                    yourSelectedImage = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+                    imageView.setImageBitmap(bitmap);
+                }
 
                 YoloV5Ncnn.Obj[] objects = yolov5ncnn.Detect(yourSelectedImage, false);
 
@@ -86,8 +102,12 @@ public class MainActivity extends Activity
         buttonDetectGPU.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
-                if (yourSelectedImage == null)
-                    return;
+                if (yourSelectedImage == null || bitmap == null)
+                {
+                    bitmap = loadImg("basketball.jpg");
+                    yourSelectedImage = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+                    imageView.setImageBitmap(bitmap);
+                }
 
                 YoloV5Ncnn.Obj[] objects = yolov5ncnn.Detect(yourSelectedImage, true);
 
@@ -197,6 +217,20 @@ public class MainActivity extends Activity
                 return;
             }
         }
+    }
+
+    private Bitmap loadImg(String fileName){
+        Bitmap bm = null;
+        AssetManager assetManager = getAssets();
+        try {
+            InputStream is = assetManager.open(fileName);
+            bm = BitmapFactory.decodeStream(is);
+            is.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return bm;
     }
 
     private Bitmap decodeUri(Uri selectedImage) throws FileNotFoundException
